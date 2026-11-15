@@ -15,6 +15,7 @@ import {
   Orbit,
   Plus,
   Minus,
+  Play,
   Radio,
   Rocket,
   RotateCcw,
@@ -1179,6 +1180,50 @@ function MissionsScreen({
   );
 }
 
+function StartScreen({
+  onContinue,
+  onRestart,
+  restartError,
+}: {
+  onContinue: () => void;
+  onRestart: () => void;
+  restartError: string | null;
+}) {
+  return (
+    <main className="start-screen">
+      <section className="start-panel" aria-labelledby="start-title">
+        <div className="start-emblem" aria-hidden="true">
+          <Rocket size={34} strokeWidth={1.4} />
+          <span />
+        </div>
+        <span className="kicker">PROGRAMA DE EXPLORAÇÃO</span>
+        <h1 id="start-title">Missão Ipê</h1>
+        <p>Prepare sua nave, explore novos mundos e avance a cada missão.</p>
+        <div className="start-actions">
+          <button type="button" className="start-continue" onClick={onContinue}>
+            <Play size={18} fill="currentColor" />
+            Continuar jogando
+            <ArrowRight size={17} />
+          </button>
+          <button type="button" className="start-restart" onClick={onRestart}>
+            <RotateCcw size={17} />
+            Reiniciar
+          </button>
+        </div>
+        {restartError && (
+          <p className="start-error" role="alert">
+            {restartError}
+          </p>
+        )}
+        <div className="start-caption">
+          <span />
+          EXPLORE NOVAS FRONTEIRAS
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function MissionContextScreen() {
   const navigate = useNavigate();
   const { missionId = "iss" } = useParams();
@@ -1249,7 +1294,7 @@ function MissionContextScreen() {
       <BottomActions
         backLabel="Missões"
         nextLabel="Montar a nave"
-        onBack={() => navigate("/")}
+        onBack={() => navigate("/missions")}
         onNext={() => navigate(`/mission/${mission.id}/build/0`)}
       />
     </main>
@@ -2530,7 +2575,7 @@ function ResultsScreen({
 
   const finish = () => {
     onComplete(mission.id, launch.id);
-    navigate("/");
+    navigate("/missions");
   };
 
   return (
@@ -2626,7 +2671,9 @@ function ResultsScreen({
 
 function Game() {
   const [engineer, setEngineer] = useState<EngineerState>(loadEngineerState);
+  const [restartError, setRestartError] = useState<string | null>(null);
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     try {
@@ -2636,10 +2683,37 @@ function Game() {
     }
   }, [engineer]);
 
+  function restartGame() {
+    if (!window.confirm("Isso apagará todo o progresso salvo. Deseja reiniciar o jogo?")) return;
+
+    try {
+      window.localStorage.removeItem(`${ENGINEER_STORAGE_KEY}-backup`);
+      window.localStorage.removeItem(ENGINEER_STORAGE_KEY);
+    } catch (error) {
+      console.error("Não foi possível limpar os dados salvos do engenheiro.", error);
+      setRestartError("Não foi possível apagar os dados salvos. Tente novamente.");
+      return;
+    }
+
+    setRestartError(null);
+    setEngineer(INITIAL_ENGINEER_STATE);
+    navigate("/missions");
+  }
+
   return (
     <Routes key={location.pathname}>
       <Route
         path="/"
+        element={
+          <StartScreen
+            onContinue={() => navigate("/missions")}
+            onRestart={restartGame}
+            restartError={restartError}
+          />
+        }
+      />
+      <Route
+        path="/missions"
         element={
           <MissionsScreen
             unlockedLevel={engineer.unlockedLevel}
@@ -2670,7 +2744,7 @@ function Game() {
         path="/mission/:missionId/results"
         element={<ResultsRoute engineer={engineer} setEngineer={setEngineer} />}
       />
-      <Route path="*" element={<Navigate to="/" replace />} />
+      <Route path="*" element={<Navigate to="/missions" replace />} />
     </Routes>
   );
 }
