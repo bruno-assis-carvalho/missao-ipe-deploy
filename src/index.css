@@ -245,6 +245,7 @@
   flex: 0 0 clamp(310px, 31vw, 410px);
   grid-template-rows: 45% 55%;
   overflow: hidden;
+  padding: 0;
   border: 1px solid var(--line);
   border-radius: var(--radius-lg);
   background: linear-gradient(145deg, rgb(17 50 66 / 80%), rgb(5 18 27 / 82%)), var(--surface);
@@ -255,9 +256,11 @@
   transition:
     border-color 220ms ease,
     transform 220ms ease;
+  color: inherit;
+  text-align: left;
 }
 
-.mission-card:hover {
+.mission-card:not(:disabled):hover {
   border-color: var(--line-bright);
   transform: translateY(-4px);
 }
@@ -265,6 +268,10 @@
 .mission-card[data-locked="true"] {
   filter: saturate(0.45);
   opacity: 0.7;
+}
+
+.mission-card:disabled {
+  cursor: not-allowed;
 }
 
 .mission-orb {
@@ -440,7 +447,7 @@
   color: var(--cyan);
 }
 
-.mission-card-copy > button,
+.mission-card-cta,
 .next-action {
   display: flex;
   min-height: 43px;
@@ -458,7 +465,7 @@
   letter-spacing: 0.04em;
 }
 
-.mission-card-copy > button:disabled {
+.mission-card[data-locked="true"] .mission-card-cta {
   border-color: var(--line);
   background: rgb(29 48 58 / 60%);
   box-shadow: none;
@@ -3839,6 +3846,56 @@
 
   .results-card > p {
     font-size: 16px;
+  }
+}
+
+@media (max-width: 680px) and (max-height: 700px) {
+  .mission-carousel {
+    padding: 52px 0 8px;
+  }
+
+  .carousel-header {
+    gap: 7px;
+    margin-bottom: 8px;
+  }
+
+  .carousel-intro h1 {
+    font-size: 24px;
+  }
+
+  .carousel-intro > p {
+    display: none;
+  }
+
+  .engineer-stats > div {
+    padding: 6px 8px;
+  }
+
+  .carousel-rail {
+    padding-bottom: 10px;
+  }
+
+  .mission-card {
+    min-height: 0;
+    grid-template-rows: 30% 70%;
+  }
+
+  .mission-card-copy {
+    padding: 12px;
+  }
+
+  .mission-card-copy h2 {
+    margin-top: 6px;
+    font-size: 20px;
+  }
+
+  .mission-facts {
+    gap: 8px;
+    padding: 8px 0;
+  }
+
+  .carousel-controls {
+    margin-top: 4px;
   }
 }
 

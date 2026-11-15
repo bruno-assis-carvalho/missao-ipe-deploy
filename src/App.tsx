@@ -1140,7 +1140,19 @@ function MissionsScreen({
           {missions.map((mission) => {
             const locked = mission.level > unlockedLevel;
             return (
-              <article className="mission-card" data-locked={locked} key={mission.id}>
+              <button
+                type="button"
+                className="mission-card"
+                data-locked={locked}
+                disabled={locked}
+                key={mission.id}
+                onClick={() => navigate(`/mission/${mission.id}/context`)}
+                aria-label={
+                  locked
+                    ? `${mission.name} bloqueada. Conclua o nível ${mission.level - 1}.`
+                    : `Selecionar missão ${mission.name}`
+                }
+              >
                 <MissionOrb mission={mission} />
                 <div className="mission-card-copy">
                   <div className="mission-card-top">
@@ -1164,15 +1176,7 @@ function MissionsScreen({
                       <Trophy size={13} /> {mission.reward}
                     </span>
                   </div>
-                  <button
-                    disabled={locked}
-                    onClick={() => navigate(`/mission/${mission.id}/context`)}
-                    aria-label={
-                      locked
-                        ? `${mission.name} bloqueada. Conclua o nível ${mission.level - 1}.`
-                        : `Selecionar missão ${mission.name}`
-                    }
-                  >
+                  <span className="mission-card-cta" aria-hidden="true">
                     {locked ? (
                       <>
                         Conclua o nível {mission.level - 1} <LockKeyhole size={14} />
@@ -1182,9 +1186,9 @@ function MissionsScreen({
                         Selecionar missão <ArrowRight size={15} />
                       </>
                     )}
-                  </button>
+                  </span>
                 </div>
-              </article>
+              </button>
             );
           })}
         </div>
