@@ -25,14 +25,14 @@ A duração-base é uma estimativa didática em dias, convertida das durações 
 
 ## Engenheiro, orçamento e inventário
 
-O engenheiro começa com **US$ 25 milhões** e inventário científico vazio. O perfil, saldo, projetos por missão, inventário, durabilidade, nível desbloqueado e etapa atual ficam salvos no navegador e são compartilhados entre as missões. Ao voltar ao jogo, escolha **Continuar partida** para retomar do ponto salvo. O progresso só é apagado quando o jogador escolhe **Reiniciar**.
+O engenheiro começa com **US$ 35 milhões** e inventário científico vazio. O perfil, saldo, projetos por missão, inventário, durabilidade, nível desbloqueado e etapa atual ficam salvos no navegador e são compartilhados entre as missões. Ao voltar ao jogo, escolha **Continuar partida** para retomar do ponto salvo. O progresso só é apagado quando o jogador escolhe **Reiniciar**.
 
 - A seleção de componentes da nave mostra uma **previsão**, não cobra imediatamente. A finalização da compra de instrumentos no carrinho debita o saldo e adiciona as unidades ao inventário.
 - No lançamento, são debitados os componentes selecionados e o custo operacional calculado. Instrumentos comprados previamente já pertencem ao engenheiro e não são cobrados novamente.
 - Um instrumento já disponível no inventário não é comprado outra vez.
 - Cada unidade possui sua própria durabilidade. Antes de ser usada em uma missão, uma unidade comprada pode ser devolvida pelo inventário, com reembolso integral do preço. Unidades selecionadas para uma missão precisam ser removidas da carga antes da devolução. Depois de usada, a unidade não pode mais ser devolvida: perde uma missão de durabilidade e, se ainda tiver usos, volta ao inventário. Ao chegar a zero, é descartada.
 - Itens já reservados em outro projeto não são contados como disponíveis gratuitamente.
-- Em caso de sucesso, ao concluir o relatório da missão, o engenheiro recebe **US$ 5 milhões + US$ 1 milhão por nível da missão + US$ 0,1 milhão por ponto percentual de capacidade científica**. Uma missão sem sucesso não paga recompensa financeira.
+- Em caso de sucesso, ao concluir o relatório da missão, o engenheiro recebe **10% a mais** que a recompensa-base de **US$ 5 milhões + US$ 1 milhão por nível da missão + US$ 0,1 milhão por ponto percentual de capacidade científica**. Uma missão sem sucesso não paga recompensa financeira.
 
 ## Nave e equipamentos
 
@@ -78,7 +78,7 @@ A eficiência compara capacidade científica e custo previsto:
 
 `eficiência = capacidade científica (pontos percentuais) / custo previsto (US$ milhões)`
 
-A missão é aprovada quando a carga-base e os instrumentos cabem no veículo e nos compartimentos, a massa total é inferior a 1.800 kg, a reserva de energia é de pelo menos 30 unidades, o custo cabe no saldo do engenheiro, a capacidade científica é de pelo menos 95% e a eficiência é de pelo menos 5 pontos percentuais por US$ milhão. Uma missão pode ser lançada com indicadores científicos ou de energia abaixo da meta, se a carga couber e houver saldo, mas o resultado será parcial e não haverá recompensa financeira.
+A missão é aprovada quando a carga-base e os instrumentos cabem no veículo e nos compartimentos, a massa total é inferior ao limite da missão (1.800 kg nas missões 1 a 4 e 2.000 kg na missão Bennu), a reserva de energia é de pelo menos 30 unidades, o custo cabe no saldo do engenheiro, a capacidade científica é de pelo menos 95% e a eficiência é de pelo menos 5 pontos percentuais por US$ milhão. Uma missão pode ser lançada com indicadores científicos ou de energia abaixo da meta, se a carga couber e houver saldo, mas o resultado será parcial e não haverá recompensa financeira.
 
 ## Regras por categoria
 

@@ -37,6 +37,7 @@ import {
   useState,
   type Dispatch,
   type DragEvent,
+  type ReactNode,
   type SetStateAction,
 } from "react";
 import {
@@ -58,6 +59,7 @@ type Mission = {
   objective: string;
   payload: string;
   payloadKg: number;
+  massLimit?: number;
   distance: string;
   duration: string;
   baseDays: number;
@@ -138,6 +140,7 @@ type StoredScienceItemData = Omit<StoredScienceItem, "refundable"> &
 
 type MissionMetrics = {
   mass: number;
+  massLimit: number;
   budget: number;
   equipmentCost: number;
   sciencePurchaseCost: number;
@@ -159,8 +162,11 @@ type MissionMetrics = {
   ready: boolean;
 };
 
-type StoredMissionMetrics = Omit<MissionMetrics, "cargoCapacity" | "cargoUsed" | "remainingCargo"> &
-  Partial<Pick<MissionMetrics, "cargoCapacity" | "cargoUsed" | "remainingCargo">>;
+type StoredMissionMetrics = Omit<
+  MissionMetrics,
+  "cargoCapacity" | "cargoUsed" | "remainingCargo" | "massLimit"
+> &
+  Partial<Pick<MissionMetrics, "cargoCapacity" | "cargoUsed" | "remainingCargo" | "massLimit">>;
 
 type LaunchRecord = {
   id: string;
@@ -185,7 +191,8 @@ type EngineerState = {
   launches: Record<string, LaunchRecord>;
 };
 
-const STARTING_ENGINEER_BUDGET = 25;
+const STARTING_ENGINEER_BUDGET = 35;
+const LEGACY_STARTING_ENGINEER_BUDGET = 25;
 
 const INITIAL_ENGINEER_STATE: EngineerState = {
   budget: STARTING_ENGINEER_BUDGET,
@@ -317,6 +324,7 @@ const missions: Mission[] = [
     objective: "Coletar uma amostra do asteroide e devolvê-la com integridade à Terra.",
     payload: "1.050 kg",
     payloadKg: 1050,
+    massLimit: 2000,
     distance: "2,1 bi km",
     duration: "7 anos",
     baseDays: 2555,
@@ -809,6 +817,10 @@ const SCIENCE_ITEMS: ScienceItem[] = [
 const ENGINEER_STORAGE_KEY = "missao-ipe-engineer-v1";
 const DAILY_OPERATING_COST = 0.0005;
 
+function calculateMissionReward(mission: Mission, scienceCapacity: number) {
+  return (5 + mission.level + scienceCapacity * 0.1) * 1.1;
+}
+
 function isValidResumePath(value: unknown): value is string {
   if (value === "/how-to-play" || value === "/missions") return true;
   if (typeof value !== "string") return false;
@@ -868,11 +880,11 @@ function migrateEngineerState(value: unknown): EngineerState | undefined {
       "scienceSlotsUsed",
       "scienceSlotsAvailable",
     ].every((key) => typeof metrics[key] === "number") &&
-    ["cargoCapacity", "cargoUsed", "remainingCargo"].every(
+    ["massLimit", "cargoCapacity", "cargoUsed", "remainingCargo"].every(
       (key) => metrics[key] === undefined || typeof metrics[key] === "number",
     ) &&
     ["payloadReady", "canLaunch", "ready"].every((key) => typeof metrics[key] === "boolean");
-  const budget =
+  let budget =
     typeof value.budget === "number" && Number.isFinite(value.budget)
       ? value.budget
       : STARTING_ENGINEER_BUDGET;
@@ -951,6 +963,7 @@ function migrateEngineerState(value: unknown): EngineerState | undefined {
       const metrics: MissionMetrics = savedMetrics
         ? {
             ...savedMetrics,
+            massLimit: savedMetrics.massLimit ?? currentMetrics.massLimit,
             cargoCapacity: savedMetrics.cargoCapacity ?? currentMetrics.cargoCapacity,
             cargoUsed: savedMetrics.cargoUsed ?? currentMetrics.cargoUsed,
             remainingCargo: savedMetrics.remainingCargo ?? currentMetrics.remainingCargo,
@@ -970,7 +983,7 @@ function migrateEngineerState(value: unknown): EngineerState | undefined {
           typeof savedLaunch.reward === "number" && Number.isFinite(savedLaunch.reward)
             ? savedLaunch.reward
             : success
-              ? 5 + mission.level + metrics.scienceCapacity * 0.1
+              ? calculateMissionReward(mission, metrics.scienceCapacity)
               : 0,
         completed: savedLaunch.completed === true,
       };
@@ -978,6 +991,17 @@ function migrateEngineerState(value: unknown): EngineerState | undefined {
   }
 
   const savedLaunches = Object.values(launches);
+  const hasSavedDesignOrProgress =
+    unlockedLevel > 1 ||
+    completedBuilds.length > 0 ||
+    inventory.length > 0 ||
+    Object.keys(cart).length > 0 ||
+    Object.keys(shipSelections).length > 0 ||
+    Object.keys(scienceSelections).length > 0 ||
+    savedLaunches.length > 0;
+  if (budget === LEGACY_STARTING_ENGINEER_BUDGET && !hasSavedDesignOrProgress) {
+    budget = STARTING_ENGINEER_BUDGET;
+  }
   const lastLaunch = savedLaunches[savedLaunches.length - 1];
   const completedLevel = savedLaunches.reduce(
     (level, launch) =>
@@ -1124,9 +1148,13 @@ function MissionStageNavigation({
 function MissionsScreen({
   unlockedLevel,
   budget,
+  completedMissionIds,
+  campaignComplete,
 }: {
   unlockedLevel: number;
   budget: number;
+  completedMissionIds: string[];
+  campaignComplete: boolean;
 }) {
   const navigate = useNavigate();
   const railRef = useRef<HTMLDivElement>(null);
@@ -1177,11 +1205,22 @@ function MissionsScreen({
       <section className="mission-carousel" aria-label="Missões disponíveis">
         <div className="carousel-header">
           <div className="carousel-intro">
-            <span className="kicker">PROGRAMA DE EXPLORAÇÃO</span>
+            <div className="missions-heading-row">
+              <button
+                type="button"
+                className="home-screen-button"
+                onClick={() => navigate("/")}
+              >
+                <ArrowLeft size={15} aria-hidden="true" />
+                Tela inicial
+              </button>
+              <span className="kicker">PROGRAMA DE EXPLORAÇÃO</span>
+            </div>
             <h1>Escolha sua próxima missão</h1>
             <p>
               Cada conquista abre uma nova fronteira. Tema: ciência inspirada em missões da NASA.
             </p>
+            {campaignComplete && <CampaignBadge />}
           </div>
           <div className="engineer-stats" aria-label="Progresso atual do engenheiro">
             <div>
@@ -1196,6 +1235,7 @@ function MissionsScreen({
         <div className="carousel-rail" ref={railRef}>
           {missions.map((mission) => {
             const locked = mission.level > unlockedLevel;
+            const completed = completedMissionIds.includes(mission.id);
             return (
               <button
                 type="button"
@@ -1221,12 +1261,16 @@ function MissionsScreen({
                     lockedMissionToastTimer.current = null;
                   }
                   setLockedMissionMessage("");
-                  navigate(`/mission/${mission.id}/context`);
+                  navigate(
+                    completed ? `/mission/${mission.id}/results` : `/mission/${mission.id}/context`,
+                  );
                 }}
                 aria-label={
                   locked
                     ? `${mission.name} bloqueada. Clique para saber como desbloqueá-la.`
-                    : `Selecionar missão ${mission.name}`
+                    : completed
+                      ? `Missão ${mission.name} concluída. Ver relatório.`
+                      : `Selecionar missão ${mission.name}`
                 }
               >
                 <MissionOrb mission={mission} />
@@ -1234,8 +1278,8 @@ function MissionsScreen({
                   <div className="mission-card-top">
                     <span>{mission.code}</span>
                     <span className="level-chip">
-                      {locked && <LockKeyhole size={11} />}
-                      NÍVEL {mission.level}
+                      {locked ? <LockKeyhole size={11} /> : completed ? <Check size={11} /> : null}
+                      {completed ? "CONCLUÍDA" : `NÍVEL ${mission.level}`}
                     </span>
                   </div>
                   <h2>{mission.name}</h2>
@@ -1269,12 +1313,56 @@ function StartScreen({
   onRestart,
   restartError,
   hasSavedProgress,
+  campaignComplete,
 }: {
   onContinue: () => void;
   onRestart: () => void;
   restartError: string | null;
   hasSavedProgress: boolean;
+  campaignComplete: boolean;
 }) {
+  const [restartConfirmationOpen, setRestartConfirmationOpen] = useState(false);
+  const confirmationRef = useRef<HTMLDivElement>(null);
+  const cancelRestartRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!restartConfirmationOpen) return;
+
+    const previousFocus = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    cancelRestartRef.current?.focus();
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setRestartConfirmationOpen(false);
+        return;
+      }
+
+      if (event.key !== "Tab") return;
+      const buttons = confirmationRef.current?.querySelectorAll<HTMLButtonElement>(
+        "button:not([disabled])",
+      );
+      if (!buttons?.length) return;
+
+      const firstButton = buttons[0];
+      const lastButton = buttons[buttons.length - 1];
+      if (event.shiftKey && document.activeElement === firstButton) {
+        event.preventDefault();
+        lastButton.focus();
+      } else if (!event.shiftKey && document.activeElement === lastButton) {
+        event.preventDefault();
+        firstButton.focus();
+      }
+    }
+
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
+  }, [restartConfirmationOpen]);
+
   return (
     <main className="start-screen">
       <section className="start-panel" aria-labelledby="start-title">
@@ -1285,13 +1373,18 @@ function StartScreen({
         <span className="kicker">PROGRAMA DE EXPLORAÇÃO</span>
         <h1 id="start-title">Missão Ipê</h1>
         <p>Prepare sua nave, explore novos mundos e avance a cada missão.</p>
+        {campaignComplete && <CampaignBadge />}
         <div className="start-actions">
           <button type="button" className="start-continue" onClick={onContinue}>
             <Play size={18} fill="currentColor" />
             {hasSavedProgress ? "Continuar partida" : "Iniciar partida"}
             <ArrowRight size={17} />
           </button>
-          <button type="button" className="start-restart" onClick={onRestart}>
+          <button
+            type="button"
+            className="start-restart"
+            onClick={() => setRestartConfirmationOpen(true)}
+          >
             <RotateCcw size={17} />
             Reiniciar
           </button>
@@ -1306,7 +1399,65 @@ function StartScreen({
           EXPLORE NOVAS FRONTEIRAS
         </div>
       </section>
+      {restartConfirmationOpen && (
+        <div
+          className="confirmation-backdrop"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) setRestartConfirmationOpen(false);
+          }}
+        >
+          <div
+            ref={confirmationRef}
+            className="confirmation-dialog"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="restart-confirmation-title"
+            aria-describedby="restart-confirmation-description"
+          >
+            <div className="confirmation-emblem" aria-hidden="true">
+              <RotateCcw size={23} />
+            </div>
+            <span className="kicker">CONFIRMAÇÃO DE SEGURANÇA</span>
+            <h2 id="restart-confirmation-title">Reiniciar a jornada?</h2>
+            <p id="restart-confirmation-description">
+              Todo o progresso salvo será apagado. Esta ação não pode ser desfeita.
+            </p>
+            <div className="confirmation-actions">
+              <button
+                ref={cancelRestartRef}
+                type="button"
+                className="confirmation-cancel"
+                onClick={() => setRestartConfirmationOpen(false)}
+              >
+                Manter progresso
+              </button>
+              <button
+                type="button"
+                className="confirmation-confirm"
+                onClick={() => {
+                  setRestartConfirmationOpen(false);
+                  onRestart();
+                }}
+              >
+                Apagar e reiniciar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
+  );
+}
+
+function CampaignBadge() {
+  return (
+    <div className="campaign-badge" role="status">
+      <Trophy size={20} aria-hidden="true" />
+      <span>
+        <strong>Explorador(a) do Sistema Solar</strong>
+        <small>Todas as missões concluídas</small>
+      </span>
+    </div>
   );
 }
 
@@ -1771,6 +1922,7 @@ function calculateMissionMetrics(
   const scienceSlotsAvailable = vehicle?.scienceSlots ?? 0;
   const mass =
     mission.payloadKg + scienceMass + selectedOptions.reduce((sum, option) => sum + option.mass, 0);
+  const massLimit = mission.massLimit ?? 1800;
   const equipmentCost = selectedOptions.reduce((sum, option) => sum + option.cost, 0);
   const energyDraw = selectedOptions.reduce((sum, option) => sum + option.energy, 0);
   const energy = Math.max(0, Math.min(99, 64 - energyDraw));
@@ -1828,7 +1980,7 @@ function calculateMissionMetrics(
   const payloadReady = cargoCapacity >= cargoUsed && scienceSlotsUsed <= scienceSlotsAvailable;
   const ready =
     payloadReady &&
-    mass < 1800 &&
+    mass < massLimit &&
     projectedCost <= budget &&
     energy >= 30 &&
     scienceCapacity >= 95 &&
@@ -1836,6 +1988,7 @@ function calculateMissionMetrics(
 
   return {
     mass,
+    massLimit,
     budget,
     equipmentCost,
     sciencePurchaseCost,
@@ -1865,6 +2018,23 @@ function formatBudget(value: number) {
 function BuildStatus({ metrics }: { metrics: MissionMetrics }) {
   return (
     <section className="build-status" aria-label="Indicadores previstos da missão">
+      <div className="build-status-card">
+        <span>
+          <Weight size={15} /> MASSA TOTAL
+        </span>
+        <strong>
+          {metrics.mass.toLocaleString("pt-BR")} <small>kg</small>
+        </strong>
+        <div className="build-status-track">
+          <i
+            data-over-budget={metrics.mass >= metrics.massLimit}
+            style={{
+              width: `${Math.min((metrics.mass / metrics.massLimit) * 100, 100)}%`,
+            }}
+          />
+        </div>
+        <small>Limite: &lt; {metrics.massLimit.toLocaleString("pt-BR")} kg</small>
+      </div>
       <div className="build-status-card">
         <span>
           <CircleDollarSign size={15} /> ORÇAMENTO PÓS-LANÇAMENTO
@@ -2606,8 +2776,8 @@ function ReviewScreen({
     exceedsScienceSlots
       ? `Os instrumentos ocupam ${metrics.scienceSlotsUsed} espaços, mas o veículo oferece ${metrics.scienceSlotsAvailable}. Remova instrumentos ou escolha um veículo com mais espaços.`
       : undefined,
-    metrics.mass >= 1800
-      ? `A massa total é ${metrics.mass.toLocaleString("pt-BR")} kg; o limite da missão é menor que 1.800 kg. Reduza a massa da nave ou da carga.`
+    metrics.mass >= metrics.massLimit
+      ? `A massa total é ${metrics.mass.toLocaleString("pt-BR")} kg; o limite da missão é menor que ${metrics.massLimit.toLocaleString("pt-BR")} kg. Reduza a massa da nave ou da carga.`
       : undefined,
     metrics.projectedCost > budget
       ? `O custo projetado de ${formatBudget(metrics.projectedCost)} excede o orçamento disponível de ${formatBudget(budget)}. Reduza os custos de montagem, instrumentos ou operação.`
@@ -2754,20 +2924,24 @@ function ReviewScreen({
 function ResultsScreen({
   launch,
   onComplete,
+  isCampaignFinale,
 }: {
   launch?: LaunchRecord;
   onComplete: (missionId: string, launchId: string) => void;
+  isCampaignFinale: boolean;
 }) {
   const navigate = useNavigate();
   const { missionId = "iss" } = useParams();
   const mission = missions.find((item) => item.id === missionId) ?? missions[0];
-  const [showResults, setShowResults] = useState(missionId !== "luna" || !launch);
+  const hasSucceeded = launch?.success === true;
+  const isCompleted = launch?.completed === true && hasSucceeded;
+  const [showResults, setShowResults] = useState(missionId !== "luna" || !launch || isCompleted);
 
   useEffect(() => {
-    if (!launch || missionId !== "luna") return;
+    if (!launch || missionId !== "luna" || isCompleted) return;
     const timer = window.setTimeout(() => setShowResults(true), 3000);
     return () => window.clearTimeout(timer);
-  }, [launch, missionId]);
+  }, [isCompleted, launch, missionId]);
 
   if (!launch) return <Navigate to={`/mission/${mission.id}/review`} replace />;
   const metrics = launch.metrics;
@@ -2776,12 +2950,12 @@ function ResultsScreen({
     .filter((item): item is ScienceItem => item !== undefined);
 
   const finish = () => {
-    onComplete(mission.id, launch.id);
-    navigate("/missions");
+    if (!isCompleted || isCampaignFinale) onComplete(mission.id, launch.id);
+    navigate(isCampaignFinale ? "/" : "/missions", { replace: true });
   };
 
   return (
-    <main className="results-screen">
+    <main className="results-screen" data-campaign-finale={isCampaignFinale}>
       {missionId === "luna" && !showResults && (
         <div className="lunar-intro" role="status" aria-label="A sonda está orbitando a Lua">
           <div className="lunar-orbit-scene" aria-hidden="true">
@@ -2807,13 +2981,24 @@ function ResultsScreen({
         <div className="result-emblem" data-success={launch.success}>
           {launch.success ? <Trophy size={34} /> : <Target size={34} />}
         </div>
-        <span className="kicker">RELATÓRIO · {mission.code}</span>
-        <h1>{launch.success ? "Missão concluída" : "Sucesso parcial"}</h1>
+        <span className="kicker">
+          {isCampaignFinale ? "FIM DE CAMPANHA" : "RELATÓRIO"} · {mission.code}
+        </span>
+        <h1>
+          {isCampaignFinale
+            ? "A jornada está completa!"
+            : launch.success
+              ? "Missão concluída"
+              : "Sucesso parcial"}
+        </h1>
         <p>
-          {launch.success
-            ? `A missão chegou a ${mission.destination} e cumpriu os parâmetros científicos.`
-            : "A configuração não atingiu todos os critérios. Consulte os indicadores e reprojete a nave."}
+          {isCampaignFinale
+            ? "Você foi além das fronteiras e cumpriu cada missão. A equipe Missão Ipê celebra esta conquista com você!"
+            : launch.success
+              ? `A missão chegou a ${mission.destination} e cumpriu os parâmetros científicos.`
+              : "A configuração não atingiu todos os critérios. Consulte os indicadores e reprojete a nave."}
         </p>
+        {isCampaignFinale && <CampaignBadge />}
         <div className="result-score">
           <div>
             <small>CAPACIDADE CIENTÍFICA</small>
@@ -2853,12 +3038,22 @@ function ResultsScreen({
             </p>
           </div>
         </aside>
-        <div className="result-buttons">
-          <button onClick={() => navigate(`/mission/${missionId}/build/0`)}>
-            <RotateCcw size={16} /> Reprojetar
-          </button>
+        <div className="result-buttons" data-completed={isCompleted}>
+          {!hasSucceeded && (
+            <button onClick={() => navigate(`/mission/${missionId}/build/0`)}>
+              <RotateCcw size={16} /> Reprojetar
+            </button>
+          )}
           <button className="next-action" onClick={finish}>
-            {launch.success ? "Receber recompensa e continuar" : "Voltar às missões"}{" "}
+            {isCampaignFinale
+              ? isCompleted
+                ? "Ir para a tela inicial"
+                : "Desbloquear conquista e ir para tela inicial"
+              : isCompleted
+                ? "Voltar às missões"
+                : launch.success
+                  ? "Receber recompensa e continuar"
+                  : "Voltar às missões"}{" "}
             <ArrowRight size={16} />
           </button>
         </div>
@@ -2867,11 +3062,30 @@ function ResultsScreen({
   );
 }
 
+function CompletedMissionGuard({
+  launches,
+  children,
+}: {
+  launches: Record<string, LaunchRecord>;
+  children: ReactNode;
+}) {
+  const { missionId = "iss" } = useParams();
+  const launch = launches[missionId];
+  if (launch?.success) {
+    return <Navigate to={`/mission/${missionId}/results`} replace />;
+  }
+  return children;
+}
+
 function Game() {
   const [engineer, setEngineer] = useState<EngineerState>(loadEngineerState);
   const [restartError, setRestartError] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const campaignComplete = missions.every(
+    (mission) =>
+      engineer.launches[mission.id]?.success && engineer.launches[mission.id]?.completed,
+  );
   const setCart: Dispatch<SetStateAction<Record<string, number>>> = (nextCart) =>
     setEngineer((current) => ({
       ...current,
@@ -2896,8 +3110,6 @@ function Game() {
   }, [location.pathname]);
 
   function restartGame() {
-    if (!window.confirm("Isso apagará todo o progresso salvo. Deseja reiniciar o jogo?")) return;
-
     try {
       window.localStorage.removeItem(`${ENGINEER_STORAGE_KEY}-backup`);
       window.localStorage.removeItem(ENGINEER_STORAGE_KEY);
@@ -2922,6 +3134,7 @@ function Game() {
             onRestart={restartGame}
             restartError={restartError}
             hasSavedProgress={engineer.resumePath !== null}
+            campaignComplete={campaignComplete}
           />
         }
       />
@@ -2932,43 +3145,64 @@ function Game() {
           <MissionsScreen
             unlockedLevel={engineer.unlockedLevel}
             budget={engineer.budget}
+            completedMissionIds={Object.values(engineer.launches)
+              .filter((launch) => launch.success)
+              .map((launch) => launch.missionId)}
+            campaignComplete={campaignComplete}
           />
         }
       />
-      <Route path="/mission/:missionId/context" element={<MissionContextScreen />} />
+      <Route
+        path="/mission/:missionId/context"
+        element={
+          <CompletedMissionGuard launches={engineer.launches}>
+            <MissionContextScreen />
+          </CompletedMissionGuard>
+        }
+      />
       <Route
         path="/mission/:missionId/build/:step"
-        element={<BuildRoute engineer={engineer} setEngineer={setEngineer} />}
+        element={
+          <CompletedMissionGuard launches={engineer.launches}>
+            <BuildRoute engineer={engineer} setEngineer={setEngineer} />
+          </CompletedMissionGuard>
+        }
       />
       <Route
         path="/mission/:missionId/science"
         element={
-          <ScienceRoute
-            engineer={engineer}
-            setEngineer={setEngineer}
-            cart={engineer.cart}
-            setCart={setCart}
-          />
+          <CompletedMissionGuard launches={engineer.launches}>
+            <ScienceRoute
+              engineer={engineer}
+              setEngineer={setEngineer}
+              cart={engineer.cart}
+              setCart={setCart}
+            />
+          </CompletedMissionGuard>
         }
       />
       <Route
         path="/mission/:missionId/science/shop"
         element={
-          <ScienceRoute
-            engineer={engineer}
-            setEngineer={setEngineer}
-            cart={engineer.cart}
-            setCart={setCart}
-          />
+          <CompletedMissionGuard launches={engineer.launches}>
+            <ScienceRoute
+              engineer={engineer}
+              setEngineer={setEngineer}
+              cart={engineer.cart}
+              setCart={setCart}
+            />
+          </CompletedMissionGuard>
         }
       />
       <Route
         path="/mission/:missionId/review"
         element={
-          <ReviewRoute
-            engineer={engineer}
-            onLaunch={(missionId) => launchMission(missionId, engineer, setEngineer)}
-          />
+          <CompletedMissionGuard launches={engineer.launches}>
+            <ReviewRoute
+              engineer={engineer}
+              onLaunch={(missionId) => launchMission(missionId, engineer, setEngineer)}
+            />
+          </CompletedMissionGuard>
         }
       />
       <Route
@@ -3199,17 +3433,34 @@ function ResultsRoute({
   setEngineer: Dispatch<SetStateAction<EngineerState>>;
 }) {
   const { missionId = "iss" } = useParams();
+  const mission = missions.find((item) => item.id === missionId) ?? missions[0];
+  const isCampaignFinale =
+    mission.level === missions.length &&
+    engineer.launches[missionId]?.success === true &&
+    missions
+      .filter((item) => item.id !== missionId)
+      .every(
+        (item) =>
+          engineer.launches[item.id]?.success && engineer.launches[item.id]?.completed,
+      );
   return (
     <ResultsScreen
       launch={engineer.launches[missionId]}
+      isCampaignFinale={isCampaignFinale}
       onComplete={(completedMissionId, launchId) =>
         setEngineer((current) => {
           const launch = current.launches[completedMissionId];
-          if (!launch || launch.id !== launchId || launch.completed) return current;
+          if (!launch || launch.id !== launchId) return current;
+          if (launch.completed) {
+            return current.resumePath === "/missions"
+              ? current
+              : { ...current, resumePath: "/missions" };
+          }
           const missionLevel = missions.find((item) => item.id === completedMissionId)?.level ?? 1;
           return {
             ...current,
             budget: current.budget + (launch.success ? launch.reward : 0),
+            resumePath: "/missions",
             unlockedLevel: launch.success
               ? Math.min(missions.length, Math.max(current.unlockedLevel, missionLevel + 1))
               : current.unlockedLevel,
@@ -3294,7 +3545,7 @@ function launchMission(
     scienceSelection,
     metrics,
     success: metrics.ready,
-    reward: metrics.ready ? 5 + mission.level + metrics.scienceCapacity * 0.1 : 0,
+    reward: metrics.ready ? calculateMissionReward(mission, metrics.scienceCapacity) : 0,
     completed: false,
   };
   setEngineer((current) => ({

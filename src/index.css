@@ -270,6 +270,104 @@
   font-size: 16px !important;
 }
 
+.confirmation-backdrop {
+  position: fixed;
+  z-index: 20;
+  inset: 0;
+  display: grid;
+  overflow-y: auto;
+  place-items: center;
+  padding: 24px;
+  background: rgb(1 7 11 / 78%);
+  backdrop-filter: blur(9px);
+}
+
+.confirmation-dialog {
+  width: min(100%, 470px);
+  padding: clamp(24px, 5vw, 36px);
+  border: 1px solid rgb(243 183 97 / 38%);
+  border-radius: 22px;
+  background:
+    radial-gradient(ellipse at 50% 0, rgb(243 183 97 / 10%), transparent 58%),
+    linear-gradient(145deg, #102b39, #06141e 75%);
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 6%),
+    0 28px 90px rgb(0 0 0 / 60%),
+    0 0 55px rgb(243 183 97 / 8%);
+  text-align: center;
+}
+
+.confirmation-emblem {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  margin: 0 auto 18px;
+  border: 1px solid rgb(243 183 97 / 40%);
+  border-radius: 17px;
+  background: rgb(129 83 24 / 19%);
+  color: var(--amber);
+  transform: rotate(-8deg);
+}
+
+.confirmation-dialog h2 {
+  margin-top: 11px;
+  font-family: var(--font-display);
+  font-size: clamp(24px, 5vw, 32px);
+}
+
+.confirmation-dialog > p {
+  margin-top: 11px;
+  color: #a7bec9;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.confirmation-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 25px;
+}
+
+.confirmation-actions button {
+  min-height: 48px;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 700;
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.confirmation-actions button:hover {
+  transform: translateY(-2px);
+}
+
+.confirmation-cancel {
+  border-color: var(--line);
+  background: rgb(7 22 32 / 78%);
+  color: #c4d5dc;
+}
+
+.confirmation-cancel:hover {
+  border-color: var(--line-bright);
+  background: rgb(18 49 65 / 90%);
+}
+
+.confirmation-confirm {
+  border-color: rgb(255 108 120 / 48%) !important;
+  background: linear-gradient(120deg, #a63b48, #752a38);
+  color: #fff3f4;
+}
+
+.confirmation-confirm:hover {
+  background: linear-gradient(120deg, #bf4552, #8b3040);
+}
+
 .start-caption {
   display: flex;
   align-items: center;
@@ -494,6 +592,38 @@
 
 .carousel-intro {
   min-width: 0;
+}
+
+.missions-heading-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.home-screen-button {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 11px;
+  border: 1px solid var(--line-bright);
+  border-radius: 999px;
+  background: rgb(10 31 43 / 82%);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 180ms ease;
+}
+
+.home-screen-button:hover {
+  border-color: var(--cyan);
+  background: rgb(20 62 77 / 92%);
+  transform: translateY(-1px);
 }
 
 .engineer-stats {
@@ -1126,7 +1256,7 @@
 .build-status {
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -3175,6 +3305,10 @@
   margin-top: 18px;
 }
 
+.result-buttons[data-completed="true"] {
+  grid-template-columns: 1fr;
+}
+
 .results-card .result-buttons > button {
   width: 100%;
 }
@@ -3254,6 +3388,7 @@
 
   .build-status {
     gap: 7px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .build-status-card {
@@ -5077,5 +5212,89 @@
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+.campaign-badge {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 11px;
+  margin-top: 16px;
+  padding: 11px 15px;
+  border: 1px solid rgb(243 183 97 / 48%);
+  border-radius: 12px;
+  background: linear-gradient(120deg, rgb(111 72 24 / 35%), rgb(29 44 49 / 74%));
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 7%),
+    0 0 28px rgb(243 183 97 / 12%);
+  color: var(--amber);
+  text-align: left;
+  animation: campaign-badge-reveal 700ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+
+.campaign-badge > span {
+  display: grid;
+  gap: 3px;
+}
+
+.campaign-badge strong {
+  color: #ffe0a6;
+  font-size: 15px;
+}
+
+.campaign-badge small {
+  color: #c4a878;
+  font-size: 13px;
+}
+
+.start-panel .campaign-badge {
+  justify-self: center;
+}
+
+.results-screen[data-campaign-finale="true"] {
+  overflow-y: auto;
+}
+
+.results-screen[data-campaign-finale="true"]::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 50% 25%, rgb(243 183 97 / 14%), transparent 48%),
+    radial-gradient(circle at 15% 30%, rgb(243 183 97 / 48%) 1px, transparent 2px),
+    radial-gradient(circle at 82% 19%, rgb(112 220 245 / 55%) 1px, transparent 2px),
+    radial-gradient(circle at 77% 72%, rgb(243 183 97 / 40%) 1px, transparent 2px);
+  background-size:
+    auto,
+    97px 83px,
+    113px 107px,
+    137px 121px;
+  content: "";
+}
+
+.results-screen[data-campaign-finale="true"] .results-card {
+  border-color: rgb(243 183 97 / 52%);
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 8%),
+    0 35px 100px rgb(0 0 0 / 40%),
+    0 0 65px rgb(243 183 97 / 12%);
+}
+
+@keyframes campaign-badge-reveal {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 480px) {
+  .confirmation-actions {
+    grid-template-columns: 1fr;
   }
 }
