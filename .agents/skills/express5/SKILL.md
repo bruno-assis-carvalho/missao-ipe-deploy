@@ -203,12 +203,9 @@ const operationDuration = meter.createHistogram("api.operation.duration", {
 
 export function Observe(operationName?: string): MethodDecorator {
   return (target, propertyKey, descriptor: PropertyDescriptor) => {
-    const original = descriptor.value as (
-      ...args: unknown[]
-    ) => Promise<unknown>;
+    const original = descriptor.value as (...args: unknown[]) => Promise<unknown>;
     descriptor.value = function (this: unknown, ...args: unknown[]) {
-      const name =
-        operationName ?? `${target.constructor.name}.${String(propertyKey)}`;
+      const name = operationName ?? `${target.constructor.name}.${String(propertyKey)}`;
       const startedAt = performance.now();
       const attributes = { operation: name };
       operationCounter.add(1, attributes);
@@ -231,9 +228,7 @@ export function Observe(operationName?: string): MethodDecorator {
             ...attributes,
             outcome: "error",
           });
-          span.recordException(
-            error instanceof Error ? error : new Error(String(error)),
-          );
+          span.recordException(error instanceof Error ? error : new Error(String(error)));
           span.setStatus({ code: SpanStatusCode.ERROR });
           logger.error(
             {
