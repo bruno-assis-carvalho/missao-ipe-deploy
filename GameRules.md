@@ -25,7 +25,7 @@ A duração-base é uma estimativa didática em dias, convertida das durações 
 
 ## Engenheiro, orçamento e inventário
 
-O engenheiro começa com **US$ 25 milhões** e inventário científico vazio. O perfil, saldo, projetos por missão, inventário, durabilidade e progresso ficam salvos no navegador e são compartilhados entre as missões.
+O engenheiro começa com **US$ 25 milhões** e inventário científico vazio. O perfil, saldo, projetos por missão, inventário, durabilidade, nível desbloqueado e etapa atual ficam salvos no navegador e são compartilhados entre as missões. Ao voltar ao jogo, escolha **Continuar partida** para retomar do ponto salvo. O progresso só é apagado quando o jogador escolhe **Reiniciar**.
 
 - A seleção de componentes da nave mostra uma **previsão**, não cobra imediatamente. A finalização da compra de instrumentos no carrinho debita o saldo e adiciona as unidades ao inventário.
 - No lançamento, são debitados os componentes selecionados e o custo operacional calculado. Instrumentos comprados previamente já pertencem ao engenheiro e não são cobrados novamente.

@@ -176,6 +176,8 @@ type LaunchRecord = {
 type EngineerState = {
   budget: number;
   unlockedLevel: number;
+  resumePath: string | null;
+  cart: Record<string, number>;
   completedBuilds: string[];
   inventory: StoredScienceItem[];
   shipSelections: Record<string, Record<string, string>>;
@@ -188,6 +190,8 @@ const STARTING_ENGINEER_BUDGET = 25;
 const INITIAL_ENGINEER_STATE: EngineerState = {
   budget: STARTING_ENGINEER_BUDGET,
   unlockedLevel: 1,
+  resumePath: null,
+  cart: {},
   completedBuilds: [],
   inventory: [],
   shipSelections: {},
@@ -805,6 +809,23 @@ const SCIENCE_ITEMS: ScienceItem[] = [
 const ENGINEER_STORAGE_KEY = "missao-ipe-engineer-v1";
 const DAILY_OPERATING_COST = 0.0005;
 
+function isValidResumePath(value: unknown): value is string {
+  if (value === "/how-to-play" || value === "/missions") return true;
+  if (typeof value !== "string") return false;
+
+  const match = value.match(
+    /^\/mission\/([^/]+)\/(context|build\/(\d+)|science(?:\/shop)?|review|results)$/,
+  );
+  if (!match) return false;
+
+  const missionExists = missions.some((mission) => mission.id === match[1]);
+  if (!missionExists) return false;
+  if (match[3] === undefined) return true;
+
+  const step = Number(match[3]);
+  return Number.isInteger(step) && step >= 0 && step < componentGroups.length;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -863,6 +884,19 @@ function migrateEngineerState(value: unknown): EngineerState | undefined {
   const scienceSelections = isScienceSelectionMap(value.scienceSelections)
     ? value.scienceSelections
     : {};
+  const cart: Record<string, number> = {};
+  if (isRecord(value.cart)) {
+    for (const [itemId, quantity] of Object.entries(value.cart)) {
+      if (
+        SCIENCE_ITEMS.some((item) => item.id === itemId) &&
+        typeof quantity === "number" &&
+        Number.isInteger(quantity) &&
+        quantity > 0
+      ) {
+        cart[itemId] = quantity;
+      }
+    }
+  }
   const inventory = Array.isArray(value.inventory)
     ? value.inventory
         .filter(
@@ -943,9 +977,39 @@ function migrateEngineerState(value: unknown): EngineerState | undefined {
     }
   }
 
+  const savedLaunches = Object.values(launches);
+  const lastLaunch = savedLaunches[savedLaunches.length - 1];
+  const completedLevel = savedLaunches.reduce(
+    (level, launch) =>
+      launch.completed && launch.success
+        ? Math.max(
+            level,
+            Math.min(
+              missions.length,
+              (missions.find((mission) => mission.id === launch.missionId)?.level ?? 0) + 1,
+            ),
+          )
+        : level,
+    unlockedLevel,
+  );
+  const hasSavedProgress =
+    budget !== STARTING_ENGINEER_BUDGET ||
+    completedLevel > 1 ||
+    completedBuilds.length > 0 ||
+    Object.keys(cart).length > 0 ||
+    Object.keys(launches).length > 0;
+
   return {
     budget,
-    unlockedLevel,
+    unlockedLevel: completedLevel,
+    cart,
+    resumePath: isValidResumePath(value.resumePath)
+      ? value.resumePath
+      : lastLaunch
+        ? `/mission/${lastLaunch.missionId}/results`
+        : hasSavedProgress
+          ? "/missions"
+          : null,
     completedBuilds,
     inventory,
     shipSelections,
@@ -1067,6 +1131,28 @@ function MissionsScreen({
   const navigate = useNavigate();
   const railRef = useRef<HTMLDivElement>(null);
 
+  useEffect(() => {
+    if (!window.matchMedia("(max-width: 900px), (max-height: 700px)").matches) return;
+
+    const rail = railRef.current;
+    if (!rail) return;
+
+    const targetIndex = Math.max(
+      missions.findIndex((mission) => mission.level === unlockedLevel),
+      0,
+    );
+    const targetCard = rail.children.item(targetIndex);
+    if (!(targetCard instanceof HTMLElement)) return;
+
+    rail.scrollTo({
+      left:
+        rail.scrollLeft +
+        targetCard.getBoundingClientRect().left -
+        rail.getBoundingClientRect().left,
+      behavior: "instant",
+    });
+  }, [unlockedLevel]);
+
   return (
     <main className="missions-screen">
       <button
@@ -1147,10 +1233,12 @@ function StartScreen({
   onContinue,
   onRestart,
   restartError,
+  hasSavedProgress,
 }: {
   onContinue: () => void;
   onRestart: () => void;
   restartError: string | null;
+  hasSavedProgress: boolean;
 }) {
   return (
     <main className="start-screen">
@@ -1165,7 +1253,7 @@ function StartScreen({
         <div className="start-actions">
           <button type="button" className="start-continue" onClick={onContinue}>
             <Play size={18} fill="currentColor" />
-            Iniciar partida
+            {hasSavedProgress ? "Continuar partida" : "Iniciar partida"}
             <ArrowRight size={17} />
           </button>
           <button type="button" className="start-restart" onClick={onRestart}>
@@ -2746,10 +2834,14 @@ function ResultsScreen({
 
 function Game() {
   const [engineer, setEngineer] = useState<EngineerState>(loadEngineerState);
-  const [cart, setCart] = useState<Record<string, number>>({});
   const [restartError, setRestartError] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
+  const setCart: Dispatch<SetStateAction<Record<string, number>>> = (nextCart) =>
+    setEngineer((current) => ({
+      ...current,
+      cart: typeof nextCart === "function" ? nextCart(current.cart) : nextCart,
+    }));
 
   useEffect(() => {
     try {
@@ -2758,6 +2850,15 @@ function Game() {
       console.error("Não foi possível salvar o perfil do engenheiro.", error);
     }
   }, [engineer]);
+
+  useEffect(() => {
+    if (location.pathname === "/") return;
+    setEngineer((current) =>
+      current.resumePath === location.pathname
+        ? current
+        : { ...current, resumePath: location.pathname },
+    );
+  }, [location.pathname]);
 
   function restartGame() {
     if (!window.confirm("Isso apagará todo o progresso salvo. Deseja reiniciar o jogo?")) return;
@@ -2782,9 +2883,10 @@ function Game() {
         path="/"
         element={
           <StartScreen
-            onContinue={() => navigate("/how-to-play")}
+            onContinue={() => navigate(engineer.resumePath ?? "/how-to-play")}
             onRestart={restartGame}
             restartError={restartError}
+            hasSavedProgress={engineer.resumePath !== null}
           />
         }
       />
@@ -2809,7 +2911,7 @@ function Game() {
           <ScienceRoute
             engineer={engineer}
             setEngineer={setEngineer}
-            cart={cart}
+            cart={engineer.cart}
             setCart={setCart}
           />
         }
@@ -2820,7 +2922,7 @@ function Game() {
           <ScienceRoute
             engineer={engineer}
             setEngineer={setEngineer}
-            cart={cart}
+            cart={engineer.cart}
             setCart={setCart}
           />
         }
