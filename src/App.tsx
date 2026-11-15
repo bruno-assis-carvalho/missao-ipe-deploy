@@ -1130,6 +1130,7 @@ function MissionsScreen({
 }) {
   const navigate = useNavigate();
   const railRef = useRef<HTMLDivElement>(null);
+  const lockedMissionToastTimer = useRef<number | null>(null);
   const [lockedMissionMessage, setLockedMissionMessage] = useState("");
 
   useEffect(() => {
@@ -1154,6 +1155,15 @@ function MissionsScreen({
     });
   }, [unlockedLevel]);
 
+  useEffect(
+    () => () => {
+      if (lockedMissionToastTimer.current !== null) {
+        window.clearTimeout(lockedMissionToastTimer.current);
+      }
+    },
+    [],
+  );
+
   return (
     <main className="missions-screen">
       <button
@@ -1172,11 +1182,6 @@ function MissionsScreen({
             <p>
               Cada conquista abre uma nova fronteira. Tema: ciência inspirada em missões da NASA.
             </p>
-            {lockedMissionMessage && (
-              <p className="locked-mission-message" role="status" aria-live="polite">
-                {lockedMissionMessage}
-              </p>
-            )}
           </div>
           <div className="engineer-stats" aria-label="Progresso atual do engenheiro">
             <div>
@@ -1202,7 +1207,18 @@ function MissionsScreen({
                     setLockedMissionMessage(
                       `Conclua primeiro o nível ${mission.level - 1} para desbloquear esta missão.`,
                     );
+                    if (lockedMissionToastTimer.current !== null) {
+                      window.clearTimeout(lockedMissionToastTimer.current);
+                    }
+                    lockedMissionToastTimer.current = window.setTimeout(() => {
+                      setLockedMissionMessage("");
+                      lockedMissionToastTimer.current = null;
+                    }, 3500);
                     return;
+                  }
+                  if (lockedMissionToastTimer.current !== null) {
+                    window.clearTimeout(lockedMissionToastTimer.current);
+                    lockedMissionToastTimer.current = null;
                   }
                   setLockedMissionMessage("");
                   navigate(`/mission/${mission.id}/context`);
@@ -1239,6 +1255,11 @@ function MissionsScreen({
           })}
         </div>
       </section>
+      {lockedMissionMessage && (
+        <div className="locked-mission-toast" role="status" aria-live="polite">
+          {lockedMissionMessage}
+        </div>
+      )}
     </main>
   );
 }
@@ -1519,10 +1540,10 @@ function BottomActions({
   return (
     <div className="bottom-actions">
       <button className="back-action" onClick={onBack}>
-        <ArrowLeft size={17} /> {backLabel}
+        <ArrowLeft size={17} /> <span>{backLabel}</span>
       </button>
       <button className="next-action" onClick={onNext} disabled={nextDisabled}>
-        {nextLabel} <ArrowRight size={17} />
+        <span>{nextLabel}</span> <ArrowRight size={17} />
       </button>
     </div>
   );
