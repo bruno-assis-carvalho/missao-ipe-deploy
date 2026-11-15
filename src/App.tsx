@@ -63,7 +63,6 @@ type Mission = {
   baseDays: number;
   theme: MissionTheme;
   themeLabel: string;
-  reward: string;
   color: string;
   story: {
     year: string;
@@ -176,7 +175,6 @@ type LaunchRecord = {
 
 type EngineerState = {
   budget: number;
-  xp: number;
   unlockedLevel: number;
   completedBuilds: string[];
   inventory: StoredScienceItem[];
@@ -189,7 +187,6 @@ const STARTING_ENGINEER_BUDGET = 25;
 
 const INITIAL_ENGINEER_STATE: EngineerState = {
   budget: STARTING_ENGINEER_BUDGET,
-  xp: 0,
   unlockedLevel: 1,
   completedBuilds: [],
   inventory: [],
@@ -213,7 +210,6 @@ const missions: Mission[] = [
     baseDays: 30,
     theme: "atmosphere",
     themeLabel: "Atmosfera e qualidade do ar",
-    reward: "450 XP",
     color: "cyan",
     story: {
       year: "2031",
@@ -241,7 +237,6 @@ const missions: Mission[] = [
     baseDays: 48,
     theme: "lunar-water",
     themeLabel: "Gelo e recursos lunares",
-    reward: "780 XP",
     color: "violet",
     story: {
       year: "2034",
@@ -269,7 +264,6 @@ const missions: Mission[] = [
     baseDays: 210,
     theme: "mars-weather",
     themeLabel: "Clima e geologia de Marte",
-    reward: "1.240 XP",
     color: "orange",
     story: {
       year: "2037",
@@ -297,7 +291,6 @@ const missions: Mission[] = [
     baseDays: 2008,
     theme: "europa-ocean",
     themeLabel: "Oceano e química de Europa",
-    reward: "2.100 XP",
     color: "blue",
     story: {
       year: "2042",
@@ -325,7 +318,6 @@ const missions: Mission[] = [
     baseDays: 2555,
     theme: "asteroid-sample",
     themeLabel: "Amostras e origem do Sistema Solar",
-    reward: "3.400 XP",
     color: "pink",
     story: {
       year: "2048",
@@ -813,12 +805,6 @@ const SCIENCE_ITEMS: ScienceItem[] = [
 const ENGINEER_STORAGE_KEY = "missao-ipe-engineer-v1";
 const DAILY_OPERATING_COST = 0.0005;
 
-function getLaunchExperience(missionId: string, success: boolean) {
-  if (!success) return 120;
-  const reward = missions.find((mission) => mission.id === missionId)?.reward;
-  return reward ? Number(reward.replace(/[^\d]/g, "")) : 0;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -869,8 +855,10 @@ function migrateEngineerState(value: unknown): EngineerState | undefined {
     typeof value.budget === "number" && Number.isFinite(value.budget)
       ? value.budget
       : STARTING_ENGINEER_BUDGET;
-  const savedXp =
-    typeof value.xp === "number" && Number.isFinite(value.xp) ? Math.max(0, value.xp) : undefined;
+  const unlockedLevel =
+    typeof value.unlockedLevel === "number" && Number.isFinite(value.unlockedLevel)
+      ? Math.min(missions.length, Math.max(1, Math.floor(value.unlockedLevel)))
+      : 1;
   const shipSelections = isSelectionMap(value.shipSelections) ? value.shipSelections : {};
   const scienceSelections = isScienceSelectionMap(value.scienceSelections)
     ? value.scienceSelections
@@ -891,10 +879,6 @@ function migrateEngineerState(value: unknown): EngineerState | undefined {
                 0),
         }))
     : [];
-  const unlockedLevel =
-    typeof value.unlockedLevel === "number" && Number.isFinite(value.unlockedLevel)
-      ? Math.min(5, Math.max(1, Math.floor(value.unlockedLevel)))
-      : 1;
   const completedBuilds = Array.isArray(value.completedBuilds)
     ? value.completedBuilds.filter(
         (missionId): missionId is string =>
@@ -959,17 +943,8 @@ function migrateEngineerState(value: unknown): EngineerState | undefined {
     }
   }
 
-  const xp =
-    savedXp ??
-    Object.values(launches).reduce(
-      (total, launch) =>
-        total + (launch.completed ? getLaunchExperience(launch.missionId, launch.success) : 0),
-      0,
-    );
-
   return {
     budget,
-    xp,
     unlockedLevel,
     completedBuilds,
     inventory,
@@ -1085,11 +1060,9 @@ function MissionStageNavigation({
 function MissionsScreen({
   unlockedLevel,
   budget,
-  xp,
 }: {
   unlockedLevel: number;
   budget: number;
-  xp: number;
 }) {
   const navigate = useNavigate();
   const railRef = useRef<HTMLDivElement>(null);
@@ -1114,13 +1087,6 @@ function MissionsScreen({
             </p>
           </div>
           <div className="engineer-stats" aria-label="Progresso atual do engenheiro">
-            <div>
-              <Trophy size={17} aria-hidden="true" />
-              <span>
-                <small>XP ATUAL</small>
-                <strong>{xp.toLocaleString("pt-BR")} XP</strong>
-              </span>
-            </div>
             <div>
               <CircleDollarSign size={17} aria-hidden="true" />
               <span>
@@ -1165,9 +1131,6 @@ function MissionsScreen({
                     </span>
                     <span>
                       <Orbit size={13} /> {mission.distance}
-                    </span>
-                    <span>
-                      <Trophy size={13} /> {mission.reward}
                     </span>
                   </div>
                 </div>
@@ -1762,6 +1725,8 @@ function ScienceLoadoutScreen({
   inventory,
   scienceSelections,
   budget,
+  cart,
+  setCart,
   onChange,
   onPurchase,
   onReturn,
@@ -1771,19 +1736,21 @@ function ScienceLoadoutScreen({
   inventory: StoredScienceItem[];
   scienceSelections: Record<string, string[]>;
   budget: number;
+  cart: Record<string, number>;
+  setCart: Dispatch<SetStateAction<Record<string, number>>>;
   onChange: (itemId: string, operation: "add" | "remove") => void;
   onPurchase: (cart: Record<string, number>) => void;
   onReturn: (instanceId: string) => void;
 }) {
   const navigate = useNavigate();
+  const location = useLocation();
   const { missionId = "iss" } = useParams();
   const mission = missions.find((item) => item.id === missionId) ?? missions[0];
   const [detailId, setDetailId] = useState(SCIENCE_ITEMS[0].id);
   const [isDragOver, setIsDragOver] = useState(false);
-  const [isShopOpen, setIsShopOpen] = useState(false);
-  const [cart, setCart] = useState<Record<string, number>>({});
   const [shopFeedback, setShopFeedback] = useState("");
   const [inventoryFeedback, setInventoryFeedback] = useState("");
+  const isShopOpen = location.pathname.endsWith("/shop");
   const detail = SCIENCE_ITEMS.find((item) => item.id === detailId) ?? SCIENCE_ITEMS[0];
   const cartItems = Object.entries(cart)
     .map(([itemId, quantity]) => ({
@@ -1878,11 +1845,11 @@ function ScienceLoadoutScreen({
   useEffect(() => {
     if (!isShopOpen) return;
     const closeOnEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setIsShopOpen(false);
+      if (event.key === "Escape") navigate(`/mission/${mission.id}/science`);
     };
     window.addEventListener("keydown", closeOnEscape);
     return () => window.removeEventListener("keydown", closeOnEscape);
-  }, [isShopOpen]);
+  }, [isShopOpen, mission.id, navigate]);
 
   if (isShopOpen) {
     return (
@@ -1895,10 +1862,6 @@ function ScienceLoadoutScreen({
               Saldo disponível: <strong>{formatBudget(budget)}</strong>
             </p>
           </div>
-          <button className="science-shop-back" onClick={() => setIsShopOpen(false)}>
-            <ArrowLeft size={17} /> Voltar ao inventário
-            {cartCount > 0 && <span>{cartCount}</span>}
-          </button>
         </header>
 
         <div className="science-shop-layout">
@@ -2068,20 +2031,20 @@ function ScienceLoadoutScreen({
             <small className="science-cart-balance">
               Saldo após a compra: {formatBudget(budget - cartTotal)}
             </small>
-            <button
-              className="science-cart-checkout"
-              disabled={cartCount === 0 || cartTotal > budget}
-              onClick={() => {
-                onPurchase(cart);
-                setCart({});
-                setShopFeedback(
-                  `Compra concluída! ${cartCount} instrumento(s) adicionado(s) ao inventário.`,
-                );
-              }}
-            >
-              <Check size={16} /> Finalizar compra
-            </button>
           </section>
+        </div>
+        <div className="bottom-actions">
+          <button
+            className="next-action"
+            disabled={cartCount === 0 || cartTotal > budget}
+            onClick={() => {
+              onPurchase(cart);
+              setCart({});
+              navigate(`/mission/${mission.id}/science`);
+            }}
+          >
+            Finalizar compra <ArrowRight size={17} />
+          </button>
         </div>
       </main>
     );
@@ -2113,7 +2076,7 @@ function ScienceLoadoutScreen({
                 className="science-buy-button"
                 onClick={() => {
                   setShopFeedback("");
-                  setIsShopOpen(true);
+                  navigate(`/mission/${mission.id}/science/shop`);
                 }}
               >
                 <ShoppingCart size={15} /> Comprar itens
@@ -2626,10 +2589,6 @@ function ResultsScreen({
             <strong>${metrics.projectedCost.toFixed(1)} mi</strong>
             <small>Saldo: {formatBudget(metrics.remainingBudget)}</small>
           </div>
-          <div>
-            <small>EXPERIÊNCIA</small>
-            <strong>{launch.success ? mission.reward : "+120 XP"}</strong>
-          </div>
         </div>
         <div className="result-reward">
           <CircleDollarSign size={17} />
@@ -2671,6 +2630,7 @@ function ResultsScreen({
 
 function Game() {
   const [engineer, setEngineer] = useState<EngineerState>(loadEngineerState);
+  const [cart, setCart] = useState<Record<string, number>>({});
   const [restartError, setRestartError] = useState<string | null>(null);
   const location = useLocation();
   const navigate = useNavigate();
@@ -2718,7 +2678,6 @@ function Game() {
           <MissionsScreen
             unlockedLevel={engineer.unlockedLevel}
             budget={engineer.budget}
-            xp={engineer.xp}
           />
         }
       />
@@ -2729,7 +2688,25 @@ function Game() {
       />
       <Route
         path="/mission/:missionId/science"
-        element={<ScienceRoute engineer={engineer} setEngineer={setEngineer} />}
+        element={
+          <ScienceRoute
+            engineer={engineer}
+            setEngineer={setEngineer}
+            cart={cart}
+            setCart={setCart}
+          />
+        }
+      />
+      <Route
+        path="/mission/:missionId/science/shop"
+        element={
+          <ScienceRoute
+            engineer={engineer}
+            setEngineer={setEngineer}
+            cart={cart}
+            setCart={setCart}
+          />
+        }
       />
       <Route
         path="/mission/:missionId/review"
@@ -2796,9 +2773,13 @@ function BuildRoute({
 function ScienceRoute({
   engineer,
   setEngineer,
+  cart,
+  setCart,
 }: {
   engineer: EngineerState;
   setEngineer: Dispatch<SetStateAction<EngineerState>>;
+  cart: Record<string, number>;
+  setCart: Dispatch<SetStateAction<Record<string, number>>>;
 }) {
   const { missionId = "iss" } = useParams();
   const mission = missions.find((item) => item.id === missionId) ?? missions[0];
@@ -2812,6 +2793,8 @@ function ScienceRoute({
       inventory={engineer.inventory}
       scienceSelections={engineer.scienceSelections}
       budget={engineer.budget}
+      cart={cart}
+      setCart={setCart}
       onPurchase={(cart) =>
         setEngineer((current) => {
           const purchases = Object.entries(cart)
@@ -2973,9 +2956,8 @@ function ResultsRoute({
           return {
             ...current,
             budget: current.budget + (launch.success ? launch.reward : 0),
-            xp: current.xp + getLaunchExperience(completedMissionId, launch.success),
             unlockedLevel: launch.success
-              ? Math.min(5, Math.max(current.unlockedLevel, missionLevel + 1))
+              ? Math.min(missions.length, Math.max(current.unlockedLevel, missionLevel + 1))
               : current.unlockedLevel,
             launches: {
               ...current.launches,

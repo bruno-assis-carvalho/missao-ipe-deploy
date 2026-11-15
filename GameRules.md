@@ -8,7 +8,7 @@
 
 ## Missões
 
-Cada missão define destino, carga de referência, duração-base, tema científico, desafios e recompensa de experiência. Os temas representam categorias de pesquisa inspiradas em missões e pesquisas da NASA:
+Cada missão define destino, carga de referência, duração-base, tema científico e desafios. As missões são desbloqueadas em sequência: ao concluir com sucesso uma missão, o jogador pode avançar para a próxima. Os temas representam categorias de pesquisa inspiradas em missões e pesquisas da NASA:
 
 - **ISS:** atmosfera e qualidade do ar, em contexto de pesquisa na Estação Espacial Internacional.
 - **Lua:** gelo e recursos lunares, com referências ao Lunar Reconnaissance Orbiter.
