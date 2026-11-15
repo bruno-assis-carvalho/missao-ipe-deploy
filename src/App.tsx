@@ -2275,7 +2275,7 @@ function ScienceLoadoutScreen({
         <div className="bottom-actions">
           <button
             className="next-action"
-            disabled={cartCount === 0 || cartTotal > budget}
+            disabled={cartTotal > budget}
             onClick={() => {
               onPurchase(cart);
               setCart({});

@@ -2663,6 +2663,7 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
+  padding: 0 19px;
   border: 1px solid var(--line);
   border-radius: var(--radius-sm);
   background: rgb(12 35 47 / 66%);
