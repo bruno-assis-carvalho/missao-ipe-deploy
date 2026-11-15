@@ -1093,13 +1093,6 @@ function MissionsScreen({
   const navigate = useNavigate();
   const railRef = useRef<HTMLDivElement>(null);
 
-  const move = (direction: number) => {
-    railRef.current?.scrollBy({
-      left: direction * Math.min(440, railRef.current.clientWidth * 0.72),
-      behavior: "smooth",
-    });
-  };
-
   return (
     <main className="missions-screen">
       <button
@@ -1176,32 +1169,10 @@ function MissionsScreen({
                       <Trophy size={13} /> {mission.reward}
                     </span>
                   </div>
-                  <span className="mission-card-cta" aria-hidden="true">
-                    {locked ? (
-                      <>
-                        Conclua o nível {mission.level - 1} <LockKeyhole size={14} />
-                      </>
-                    ) : (
-                      <>
-                        Selecionar missão <ArrowRight size={15} />
-                      </>
-                    )}
-                  </span>
                 </div>
               </button>
             );
           })}
-        </div>
-        <div className="carousel-controls">
-          <button onClick={() => move(-1)} aria-label="Missões anteriores">
-            <ChevronLeft size={19} />
-          </button>
-          <span>
-            <i /> ARRASTE PARA EXPLORAR
-          </span>
-          <button onClick={() => move(1)} aria-label="Próximas missões">
-            <ChevronRight size={19} />
-          </button>
         </div>
       </section>
     </main>
