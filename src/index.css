@@ -561,6 +561,15 @@
   font-size: 16px;
 }
 
+.locked-mission-message {
+  width: fit-content;
+  padding: 8px 12px;
+  border: 1px solid rgb(255 195 94 / 36%);
+  border-radius: 10px;
+  background: rgb(255 195 94 / 8%);
+  color: var(--text);
+}
+
 .mission-theme {
   display: block;
   margin-top: 7px;
@@ -614,18 +623,19 @@
   text-align: left;
 }
 
-.mission-card:not(:disabled):hover {
+.mission-card:not([data-locked="true"]):hover {
   border-color: var(--line-bright);
   transform: translateY(-4px);
 }
 
 .mission-card[data-locked="true"] {
-  filter: saturate(0.45);
-  opacity: 0.7;
+  filter: grayscale(1);
+  opacity: 0.62;
+  cursor: pointer;
 }
 
-.mission-card:disabled {
-  cursor: not-allowed;
+.mission-card[data-locked="true"]:hover {
+  opacity: 0.78;
 }
 
 .mission-orb {

@@ -1130,6 +1130,7 @@ function MissionsScreen({
 }) {
   const navigate = useNavigate();
   const railRef = useRef<HTMLDivElement>(null);
+  const [lockedMissionMessage, setLockedMissionMessage] = useState("");
 
   useEffect(() => {
     if (!window.matchMedia("(max-width: 900px), (max-height: 700px)").matches) return;
@@ -1171,6 +1172,11 @@ function MissionsScreen({
             <p>
               Cada conquista abre uma nova fronteira. Tema: ciência inspirada em missões da NASA.
             </p>
+            {lockedMissionMessage && (
+              <p className="locked-mission-message" role="status" aria-live="polite">
+                {lockedMissionMessage}
+              </p>
+            )}
           </div>
           <div className="engineer-stats" aria-label="Progresso atual do engenheiro">
             <div>
@@ -1190,12 +1196,20 @@ function MissionsScreen({
                 type="button"
                 className="mission-card"
                 data-locked={locked}
-                disabled={locked}
                 key={mission.id}
-                onClick={() => navigate(`/mission/${mission.id}/context`)}
+                onClick={() => {
+                  if (locked) {
+                    setLockedMissionMessage(
+                      `Conclua primeiro o nível ${mission.level - 1} para desbloquear esta missão.`,
+                    );
+                    return;
+                  }
+                  setLockedMissionMessage("");
+                  navigate(`/mission/${mission.id}/context`);
+                }}
                 aria-label={
                   locked
-                    ? `${mission.name} bloqueada. Conclua o nível ${mission.level - 1}.`
+                    ? `${mission.name} bloqueada. Clique para saber como desbloqueá-la.`
                     : `Selecionar missão ${mission.name}`
                 }
               >
