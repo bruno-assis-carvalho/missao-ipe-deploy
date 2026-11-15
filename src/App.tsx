@@ -2654,7 +2654,7 @@ function ResultsScreen({
 
   const finish = () => {
     onComplete(mission.id, launch.id);
-    navigate("/how-to-play");
+    navigate("/missions");
   };
 
   return (
@@ -2773,7 +2773,7 @@ function Game() {
 
     setRestartError(null);
     setEngineer(INITIAL_ENGINEER_STATE);
-    navigate("/missions");
+    navigate("/how-to-play");
   }
 
   return (
