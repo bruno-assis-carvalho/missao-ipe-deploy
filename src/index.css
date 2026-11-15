@@ -3041,6 +3041,15 @@
 }
 
 .lunar-intro {
+  --launch-highlight: #55c5d8;
+  --launch-base: #22667a;
+  --launch-shadow: #0e2d4d;
+  --launch-detail: #0b2433;
+  --launch-glow: rgb(103 221 247 / 30%);
+  --launch-backdrop: rgb(33 94 126 / 28%);
+  --launch-orbit: rgb(107 220 246 / 44%);
+  --launch-body-border: rgb(199 240 250 / 80%);
+  --launch-body-glow: rgb(103 221 247 / 85%);
   position: fixed;
   z-index: 4;
   inset: 0;
@@ -3049,8 +3058,56 @@
   justify-items: center;
   gap: 18px;
   overflow: hidden;
-  background: radial-gradient(ellipse at 50% 48%, rgb(33 94 126 / 28%), transparent 48%), #030c15;
+  background: radial-gradient(ellipse at 50% 48%, var(--launch-backdrop), transparent 48%), #030c15;
   animation: lunar-intro-appear 350ms ease-out both;
+}
+
+.lunar-intro[data-color="violet"] {
+  --launch-highlight: #c7b9ff;
+  --launch-base: #7866b3;
+  --launch-shadow: #332c55;
+  --launch-detail: #29213f;
+  --launch-glow: rgb(154 125 248 / 34%);
+  --launch-backdrop: rgb(104 69 171 / 28%);
+  --launch-orbit: rgb(192 173 255 / 54%);
+  --launch-body-border: rgb(230 221 255 / 84%);
+  --launch-body-glow: rgb(176 147 255 / 86%);
+}
+
+.lunar-intro[data-color="orange"] {
+  --launch-highlight: #ffb06e;
+  --launch-base: #c05c31;
+  --launch-shadow: #5e2822;
+  --launch-detail: #492219;
+  --launch-glow: rgb(255 104 64 / 34%);
+  --launch-backdrop: rgb(142 62 37 / 30%);
+  --launch-orbit: rgb(255 157 105 / 54%);
+  --launch-body-border: rgb(255 221 189 / 84%);
+  --launch-body-glow: rgb(255 148 93 / 86%);
+}
+
+.lunar-intro[data-color="blue"] {
+  --launch-highlight: #bfe9ff;
+  --launch-base: #5997ba;
+  --launch-shadow: #173b61;
+  --launch-detail: #18374d;
+  --launch-glow: rgb(89 194 245 / 34%);
+  --launch-backdrop: rgb(49 117 163 / 30%);
+  --launch-orbit: rgb(122 205 245 / 54%);
+  --launch-body-border: rgb(221 247 255 / 84%);
+  --launch-body-glow: rgb(115 205 255 / 86%);
+}
+
+.lunar-intro[data-color="pink"] {
+  --launch-highlight: #ffb1d6;
+  --launch-base: #a95583;
+  --launch-shadow: #492d48;
+  --launch-detail: #3b2237;
+  --launch-glow: rgb(232 110 184 / 34%);
+  --launch-backdrop: rgb(133 53 112 / 30%);
+  --launch-orbit: rgb(232 145 206 / 54%);
+  --launch-body-border: rgb(255 223 243 / 84%);
+  --launch-body-glow: rgb(255 129 210 / 86%);
 }
 
 .lunar-orbit-scene {
@@ -3066,25 +3123,25 @@
   width: 48%;
   aspect-ratio: 1;
   overflow: hidden;
-  border: 1px solid rgb(222 233 240 / 65%);
+  border: 1px solid color-mix(in srgb, var(--launch-highlight) 65%, transparent);
   border-radius: 50%;
   background:
     radial-gradient(ellipse at 35% 27%, rgb(255 255 255 / 55%), transparent 3%),
-    radial-gradient(ellipse at 63% 61%, #777d82 0 5%, transparent 6%),
-    radial-gradient(ellipse at 34% 72%, #777d82 0 8%, transparent 9%),
-    radial-gradient(ellipse at 70% 31%, #858b90 0 4%, transparent 5%),
-    linear-gradient(145deg, #d6d9d8, #8b9398 54%, #49525b);
+    radial-gradient(ellipse at 63% 61%, var(--launch-detail) 0 5%, transparent 6%),
+    radial-gradient(ellipse at 34% 72%, var(--launch-detail) 0 8%, transparent 9%),
+    radial-gradient(ellipse at 70% 31%, var(--launch-detail) 0 4%, transparent 5%),
+    linear-gradient(145deg, var(--launch-highlight), var(--launch-base) 54%, var(--launch-shadow));
   box-shadow:
     inset -24px -13px 35px rgb(9 17 26 / 72%),
-    0 0 55px rgb(186 211 231 / 30%);
+    0 0 55px var(--launch-glow);
 }
 
 .lunar-crater {
   position: absolute;
-  border: 1px solid rgb(45 53 60 / 48%);
+  border: 1px solid color-mix(in srgb, var(--launch-detail) 75%, transparent);
   border-radius: 50%;
-  background: rgb(68 75 82 / 22%);
-  box-shadow: inset 2px 2px 4px rgb(29 36 42 / 28%);
+  background: color-mix(in srgb, var(--launch-detail) 35%, transparent);
+  box-shadow: inset 2px 2px 4px color-mix(in srgb, var(--launch-detail) 40%, transparent);
 }
 
 .lunar-crater-one {
@@ -3112,7 +3169,7 @@
   position: absolute;
   width: 94%;
   height: 45%;
-  border: 1px solid rgb(107 220 246 / 44%);
+  border: 1px solid var(--launch-orbit);
   border-radius: 50%;
   animation: lunar-orbit 3s linear infinite;
 }
@@ -3123,10 +3180,10 @@
   left: 50%;
   width: 21px;
   height: 21px;
-  border: 1px solid rgb(199 240 250 / 80%);
+  border: 1px solid var(--launch-body-border);
   border-radius: 50%;
-  background: radial-gradient(circle at 32% 28%, #e8fbff, #65bad4 55%, #28708d);
-  box-shadow: 0 0 18px rgb(103 221 247 / 85%);
+  background: radial-gradient(circle at 32% 28%, #fff, var(--launch-highlight) 55%, var(--launch-shadow));
+  box-shadow: 0 0 18px var(--launch-body-glow);
   transform: translateX(-50%);
 }
 

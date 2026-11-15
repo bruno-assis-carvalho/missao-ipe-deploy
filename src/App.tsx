@@ -2935,13 +2935,13 @@ function ResultsScreen({
   const mission = missions.find((item) => item.id === missionId) ?? missions[0];
   const hasSucceeded = launch?.success === true;
   const isCompleted = launch?.completed === true && hasSucceeded;
-  const [showResults, setShowResults] = useState(missionId !== "luna" || !launch || isCompleted);
+  const [showResults, setShowResults] = useState(!launch || isCompleted);
 
   useEffect(() => {
-    if (!launch || missionId !== "luna" || isCompleted) return;
+    if (!launch || isCompleted) return;
     const timer = window.setTimeout(() => setShowResults(true), 3000);
     return () => window.clearTimeout(timer);
-  }, [isCompleted, launch, missionId]);
+  }, [isCompleted, launch]);
 
   if (!launch) return <Navigate to={`/mission/${mission.id}/review`} replace />;
   const metrics = launch.metrics;
@@ -2956,8 +2956,13 @@ function ResultsScreen({
 
   return (
     <main className="results-screen" data-campaign-finale={isCampaignFinale}>
-      {missionId === "luna" && !showResults && (
-        <div className="lunar-intro" role="status" aria-label="A sonda está orbitando a Lua">
+      {!showResults && (
+        <div
+          className="lunar-intro"
+          data-color={mission.color}
+          role="status"
+          aria-label={`A sonda está orbitando ${mission.destination}`}
+        >
           <div className="lunar-orbit-scene" aria-hidden="true">
             <div className="lunar-planet">
               <span className="lunar-crater lunar-crater-one" />
@@ -2968,7 +2973,7 @@ function ResultsScreen({
               <span className="lunar-orbiting-body" />
             </div>
           </div>
-          <span className="kicker">APROXIMAÇÃO LUNAR</span>
+          <span className="kicker">APROXIMAÇÃO · {mission.name.toUpperCase()}</span>
           <p>A sonda está entrando em órbita...</p>
         </div>
       )}
