@@ -1165,7 +1165,7 @@ function StartScreen({
         <div className="start-actions">
           <button type="button" className="start-continue" onClick={onContinue}>
             <Play size={18} fill="currentColor" />
-            Continuar jogando
+            Iniciar partida
             <ArrowRight size={17} />
           </button>
           <button type="button" className="start-restart" onClick={onRestart}>
@@ -1182,6 +1182,122 @@ function StartScreen({
           <span />
           EXPLORE NOVAS FRONTEIRAS
         </div>
+      </section>
+    </main>
+  );
+}
+
+function HowToPlayScreen() {
+  const navigate = useNavigate();
+  const steps = [
+    {
+      icon: Target,
+      number: "01",
+      title: "Escolha uma missão",
+      description:
+        "Leia o briefing e entenda o destino, a carga e o desafio científico antes de começar.",
+    },
+    {
+      icon: Rocket,
+      number: "02",
+      title: "Monte sua nave",
+      description:
+        "Escolha veículo, propulsão, energia, proteção e navegação. Cada peça muda massa, custo, energia ou duração.",
+    },
+    {
+      icon: Atom,
+      number: "03",
+      title: "Leve ciência a bordo",
+      description:
+        "Selecione instrumentos do inventário ou compre novos. Confira os espaços disponíveis e o limite de massa.",
+    },
+    {
+      icon: Check,
+      number: "04",
+      title: "Revise e lance",
+      description:
+        "Confira os indicadores e o saldo previsto. Lance a missão e descubra se o projeto alcançou seus objetivos.",
+    },
+  ];
+
+  return (
+    <main className="how-to-play-screen">
+      <section className="how-to-play-content" aria-labelledby="how-to-play-title">
+        <button
+          type="button"
+          className="how-to-play-back"
+          onClick={() => navigate("/")}
+        >
+          <ArrowLeft size={16} /> Voltar ao início
+        </button>
+        <header className="how-to-play-heading">
+          <span className="kicker">GUIA DE MISSÃO</span>
+          <h1 id="how-to-play-title">Como jogar</h1>
+          <p>
+            Planeje sua nave, proteja a pesquisa e chegue ao destino. Cada escolha
+            importa.
+          </p>
+        </header>
+
+        <div className="how-to-play-steps">
+          {steps.map(({ icon: Icon, number, title, description }) => (
+            <article className="how-to-play-step" key={number}>
+              <div className="how-to-play-step-top">
+                <span className="how-to-play-step-icon">
+                  <Icon size={20} />
+                </span>
+                <span className="how-to-play-step-number">{number}</span>
+              </div>
+              <h2>{title}</h2>
+              <p>{description}</p>
+            </article>
+          ))}
+        </div>
+
+        <aside className="how-to-play-tips" aria-labelledby="tips-title">
+          <div className="how-to-play-tips-heading">
+            <Sparkles size={19} />
+            <h2 id="tips-title">Dicas para sua primeira missão</h2>
+          </div>
+          <ul>
+            <li>
+              <BatteryCharging size={17} />
+              <span>
+                <strong>Energia:</strong> mantenha pelo menos 30 unidades de
+                reserva para aprovar a missão.
+              </span>
+            </li>
+            <li>
+              <Atom size={17} />
+              <span>
+                <strong>Pesquisa:</strong> instrumentos alinhados ao tema da
+                missão aumentam sua capacidade científica.
+              </span>
+            </li>
+            <li>
+              <Gauge size={17} />
+              <span>
+                <strong>Equilíbrio:</strong> acompanhe massa e orçamento. Mais
+                massa pode aumentar os dias de viagem e o custo operacional.
+              </span>
+            </li>
+            <li>
+              <Trophy size={17} />
+              <span>
+                <strong>Sucesso completo:</strong> mire em 95% de capacidade
+                científica e eficiência de pelo menos 5 pontos por milhão.
+              </span>
+            </li>
+          </ul>
+        </aside>
+
+        <button
+          type="button"
+          className="how-to-play-start"
+          onClick={() => navigate("/missions")}
+        >
+          Escolher missão <ArrowRight size={17} />
+        </button>
       </section>
     </main>
   );
@@ -2538,7 +2654,7 @@ function ResultsScreen({
 
   const finish = () => {
     onComplete(mission.id, launch.id);
-    navigate("/missions");
+    navigate("/how-to-play");
   };
 
   return (
@@ -2666,12 +2782,13 @@ function Game() {
         path="/"
         element={
           <StartScreen
-            onContinue={() => navigate("/missions")}
+            onContinue={() => navigate("/how-to-play")}
             onRestart={restartGame}
             restartError={restartError}
           />
         }
       />
+      <Route path="/how-to-play" element={<HowToPlayScreen />} />
       <Route
         path="/missions"
         element={

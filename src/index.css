@@ -52,6 +52,7 @@
 
 .missions-screen,
 .start-screen,
+.how-to-play-screen,
 .context-screen,
 .build-screen,
 .review-screen,
@@ -68,6 +69,7 @@
 
 .missions-screen::before,
 .start-screen::before,
+.how-to-play-screen::before,
 .context-screen::before,
 .build-screen::before,
 .review-screen::before,
@@ -285,6 +287,190 @@
   border-radius: 50%;
   background: var(--cyan);
   box-shadow: 0 0 9px var(--cyan);
+}
+
+.how-to-play-screen {
+  height: 100dvh;
+  overflow: auto;
+  padding: clamp(20px, 4vh, 42px) 24px;
+}
+
+.how-to-play-content {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 1080px);
+  margin: 0 auto;
+  padding-bottom: 30px;
+}
+
+.how-to-play-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: rgb(7 22 32 / 65%);
+  color: #b7cbd4;
+  font-size: 14px;
+  transition:
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+.how-to-play-back:hover {
+  border-color: var(--line-bright);
+  color: var(--text);
+}
+
+.how-to-play-heading {
+  max-width: 700px;
+  margin: clamp(24px, 4vh, 42px) auto 28px;
+  text-align: center;
+}
+
+.how-to-play-heading h1 {
+  margin-top: 9px;
+  font-family: var(--font-display);
+  font-size: clamp(34px, 5vw, 54px);
+  font-weight: 600;
+  letter-spacing: -0.05em;
+  line-height: 1.05;
+}
+
+.how-to-play-heading p {
+  margin-top: 12px;
+  color: #a7bec9;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.how-to-play-steps {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.how-to-play-step {
+  min-height: 190px;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: linear-gradient(145deg, rgb(13 38 53 / 84%), rgb(4 17 26 / 90%));
+  box-shadow: inset 0 1px rgb(255 255 255 / 4%);
+}
+
+.how-to-play-step-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.how-to-play-step-icon {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 1px solid rgb(72 221 245 / 27%);
+  border-radius: 12px;
+  background: rgb(28 110 131 / 22%);
+  color: var(--cyan);
+}
+
+.how-to-play-step-number {
+  color: #6d8b9b;
+  font-family: var(--font-display);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.how-to-play-step h2 {
+  margin-top: 17px;
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.how-to-play-step p {
+  margin-top: 7px;
+  color: #9ab2bf;
+  font-size: 14px;
+  line-height: 1.55;
+}
+
+.how-to-play-tips {
+  margin-top: 17px;
+  padding: 18px 22px;
+  border: 1px solid rgb(155 125 248 / 22%);
+  border-radius: var(--radius-md);
+  background: linear-gradient(115deg, rgb(38 32 73 / 35%), rgb(7 22 32 / 75%));
+}
+
+.how-to-play-tips-heading {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #c1aaff;
+}
+
+.how-to-play-tips-heading h2 {
+  color: var(--text);
+  font-family: var(--font-display);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.how-to-play-tips ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px 24px;
+  margin-top: 15px;
+  padding: 0;
+  list-style: none;
+}
+
+.how-to-play-tips li {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: #a7bec9;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.how-to-play-tips li > svg {
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--cyan);
+}
+
+.how-to-play-tips strong {
+  color: var(--text);
+}
+
+.how-to-play-start {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 20px auto 0;
+  padding: 0 24px;
+  border: 1px solid #59dff2;
+  border-radius: 12px;
+  background: linear-gradient(100deg, #21a8bf, #187d9b);
+  box-shadow: 0 10px 30px rgb(24 161 190 / 20%);
+  color: #f3fdff;
+  font-size: 15px;
+  font-weight: 700;
+  transition:
+    box-shadow 180ms ease,
+    transform 180ms ease;
+}
+
+.how-to-play-start:hover {
+  box-shadow: 0 14px 34px rgb(24 161 190 / 35%);
+  transform: translateY(-2px);
 }
 
 .mission-carousel {
@@ -4543,6 +4729,39 @@
     height: auto;
     padding: 9px 10px;
     font-size: 13px;
+  }
+}
+
+@media (max-width: 900px) {
+  .how-to-play-steps {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 680px) {
+  .how-to-play-screen {
+    padding: 18px 16px;
+  }
+
+  .how-to-play-heading {
+    margin: 24px auto 20px;
+  }
+
+  .how-to-play-steps,
+  .how-to-play-tips ul {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .how-to-play-step {
+    min-height: 0;
+  }
+
+  .how-to-play-tips {
+    padding: 16px;
+  }
+
+  .how-to-play-tips-heading {
+    align-items: flex-start;
   }
 }
 
