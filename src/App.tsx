@@ -47,6 +47,7 @@ import {
   useNavigate,
   useParams,
 } from "react-router";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 
 type Mission = {
   id: string;
@@ -3032,6 +3033,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <Game />
+      <SpeedInsights />
     </BrowserRouter>
   );
 }
